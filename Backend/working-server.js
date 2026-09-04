@@ -23,6 +23,7 @@ const client = new MongoClient(uri);
 const initializeCartRoutes = require('./Cart/cart');
 const initializeProductRoutes = require('./Products/Products');
 const initializeSubscriberRoutes = require('./Subscribers/subscribers');
+const initializeAdminRoutes = require('./Admin/admin');
 
 async function main() {
   try {
@@ -34,11 +35,28 @@ async function main() {
     const cartRoutes = initializeCartRoutes(db);
     const productRoutes = initializeProductRoutes(db);
     const subscriberRoutes = initializeSubscriberRoutes(db);
+    const adminRoutes = initializeAdminRoutes(db);
 
-    // Use the route modules with /api prefix
+    // Use the route modules with /api prefix - specific routes first to prevent conflicts
+    app.use('/api/admin', adminRoutes);
+    app.use('/api/subscribers', subscriberRoutes);
+    app.use('/api/conversion-rates', async (req, res) => {
+      try {
+        const response = await axios.get('https://api.exchangerate-api.com/v4/latest/USD');
+        res.json(response.data.rates);
+      } catch (err) {
+        res.status(500).json({ error: "Error fetching conversion rates" });
+      }
+    });
+    app.use('/api/health', (req, res) => {
+      res.json({ 
+        status: 'OK', 
+        message: 'Luxe Estate API is running',
+        timestamp: new Date().toISOString()
+      });
+    });
     app.use('/api', cartRoutes);
     app.use('/api', productRoutes);
-    app.use('/api', subscriberRoutes);
 
     // Root route for health check
     app.get('/', (req, res) => {
@@ -75,6 +93,7 @@ async function main() {
       console.log('- Cart: /api/cart');
       console.log('- Products: /api/:category');
       console.log('- Subscribers: /api/subscribers');
+      console.log('- Admin: /api/admin/*');
       console.log('- Conversion rates: /api/conversion-rates');
       console.log('- Health check: /api/health');
     });

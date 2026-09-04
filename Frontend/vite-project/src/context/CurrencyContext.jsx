@@ -20,6 +20,19 @@ export const CurrencyProvider = ({ children }) => {
     
     if (savedCurrency) setCurrency(savedCurrency);
     if (savedLanguage) setLanguage(savedLanguage);
+
+    const fetchRates = async () => {
+      try {
+        const response = await fetch('https://api.exchangerate-api.com/v4/latest/INR');
+        const data = await response.json();
+        if (data && data.rates) {
+          setConversionRates(data.rates);
+        }
+      } catch (error) {
+        console.error('Failed to fetch conversion rates:', error);
+      }
+    };
+    fetchRates();
   }, []);
 
   // Save preferences to localStorage when they change
@@ -31,7 +44,10 @@ export const CurrencyProvider = ({ children }) => {
   const changeLanguage = (newLanguage) => {
     setLanguage(newLanguage);
     localStorage.setItem('preferredLanguage', newLanguage);
-    // Here you would typically update i18n language as well
+    // Update i18n language as well
+    if (window.i18next) {
+      window.i18next.changeLanguage(newLanguage);
+    }
   };
 
   // Format price based on selected currency

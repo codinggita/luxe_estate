@@ -1,61 +1,16 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { useCurrency } from "../../context/CurrencyContext.jsx";
+import { useCart } from "../../context/CartContext.jsx";
+import { useTranslation } from "react-i18next";
 import "./Cart.css";
 import { FiShoppingBag, FiTrash2, FiPlus, FiMinus, FiHeart } from "react-icons/fi";
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || "https://luxe-estate-3.onrender.com/api";
-
 const Cart = () => {
-  const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { formatPriceINR } = useCurrency();
-
-  useEffect(() => {
-    fetchCart();
-  }, []);
-
-  const fetchCart = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/cart`);
-
-      setCartItems(response.data.items || []);
-      console.log('Fetched Cart Items:', response.data.items);
-    } catch (err) {
-      console.error("Error fetching cart:", err);
-      setError("Failed to fetch cart items");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateQuantity = async (id, quantity) => {
-    console.log(`Updating quantity for productId: ${id}, New Quantity: ${quantity}`);
-
-    if (quantity < 1) return removeItem(id);
-
-    try {
-      await axios.patch(`${API_URL}/cart/${id}`, { quantity });
-
-      fetchCart();
-    } catch (err) {
-      console.error("Error updating quantity:", err);
-      setError("Failed to update quantity");
-    }
-  };
-
-  const removeItem = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/cart/${id}`);
-
-      fetchCart();
-    } catch (err) {
-      console.error("Error removing item:", err);
-      setError("Failed to remove item");
-    }
-  };
+  const { cart: cartItems, loading, updateQuantity, removeItem, fetchCart } = useCart();
+  const { t } = useTranslation();
 
   const calculateSubtotal = () => {
     return cartItems.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
@@ -88,8 +43,8 @@ const Cart = () => {
       <div className="cart-page">
         <div className="cart-container">
           <div className="error-message">
-            <p>{error}</p>
-            <button onClick={fetchCart}>Try Again</button>
+            <p>{t(error)}</p>
+            <button onClick={fetchCart}>{t('Try Again')}</button>
           </div>
         </div>
       </div>
@@ -104,10 +59,10 @@ const Cart = () => {
             <div className="empty-cart-icon">
               <FiShoppingBag size={48} />
             </div>
-            <h2>Your cart is empty</h2>
-            <p>Looks like you haven't added anything to your cart yet.</p>
+            <h2>{t('Your cart is empty')}</h2>
+            <p>{t("Looks like you haven't added anything to your cart yet.")}</p>
             <Link to="/" className="shop-btn">
-              Continue Shopping
+              {t('Continue Shopping')}
             </Link>
           </div>
         </div>
@@ -119,8 +74,8 @@ const Cart = () => {
     <div className="cart-page">
       <div className="cart-container">
         <div className="cart-header">
-          <h1>Your Shopping Cart</h1>
-          <p>{cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in cart</p>
+          <h1>{t('Your Shopping Cart')}</h1>
+          <p>{cartItems.length} {cartItems.length === 1 ? t('item') : t('items')} {t('in cart')}</p>
         </div>
 
         <div className="cart-grid">
@@ -154,28 +109,28 @@ const Cart = () => {
                 <div className="cart-item-details">
                   <div className="product-header">
                     <h3 className="cart-item-title">{item.name}</h3>
-                    <span className="product-category">{item.category || 'Luxury Apparel'}</span>
+                    <span className="product-category">{t(item.category || 'Luxury Apparel')}</span>
                   </div>
                   
                   <div className="product-meta">
                     <div className="meta-item">
-                      <span className="meta-label">Product ID:</span>
+                      <span className="meta-label">{t('Product ID')}:</span>
                       <span className="meta-value">{item._id?.substring(0, 8) || 'N/A'}</span>
                     </div>
                     {item.size && (
                       <div className="meta-item">
-                        <span className="meta-label">Size:</span>
+                        <span className="meta-label">{t('Size')}:</span>
                         <span className="meta-value">{item.size}</span>
                       </div>
                     )}
                     {item.color && (
                       <div className="meta-item">
-                        <span className="meta-label">Color:</span>
+                        <span className="meta-label">{t('Color')}:</span>
                         <span className="meta-value">{item.color}</span>
                       </div>
                     )}
                     <div className="meta-item">
-                      <span className="meta-label">Unit Price:</span>
+                      <span className="meta-label">{t('Unit Price')}:</span>
                       <span className="meta-value">{formatPriceINR(item.price || 0)}</span>
                     </div>
                   </div>
@@ -200,13 +155,13 @@ const Cart = () => {
                     </div>
                     <div className="action-buttons">
                       <button className="wishlist-btn">
-                        <FiHeart size={16} /> Save for later
+                        <FiHeart size={16} /> {t('Save for later')}
                       </button>
                       <button 
                         className="remove-btn" 
                         onClick={() => removeItem(item._id)}
                       >
-                        <FiTrash2 size={16} /> Remove
+                        <FiTrash2 size={16} /> {t('Remove')}
                       </button>
                     </div>
                   </div>
@@ -217,13 +172,13 @@ const Cart = () => {
                   </div>
                   {item.quantity > 1 && (
                     <div className="per-unit">
-                      {formatPriceINR(item.price || 0)} each
+                      {formatPriceINR(item.price || 0)} {t('each')}
                     </div>
                   )}
-                  {item.inStock ? (
-                    <div className="stock-status in-stock">In Stock</div>
+                  {item.inStock !== false ? (
+                    <div className="stock-status in-stock">{t('In Stock')}</div>
                   ) : (
-                    <div className="stock-status out-of-stock">Out of Stock</div>
+                    <div className="stock-status out-of-stock">{t('Out of Stock')}</div>
                   )}
                 </div>
               </div>
@@ -231,28 +186,28 @@ const Cart = () => {
           </div>
 
           <div className="cart-summary">
-            <h3 className="summary-title">Order Summary</h3>
+            <h3 className="summary-title">{t('Order Summary')}</h3>
             <div className="summary-row">
-              <span>Subtotal</span>
+              <span>{t('Subtotal')}</span>
               <span>{formatPriceINR(calculateSubtotal())}</span>
             </div>
             <div className="summary-row">
-              <span>Shipping</span>
-              <span>Free</span>
+              <span>{t('Shipping')}</span>
+              <span>{t('Free')}</span>
             </div>
             <div className="summary-row">
-              <span>Tax</span>
+              <span>{t('Tax')}</span>
               <span>{formatPriceINR(calculateTax())}</span>
             </div>
             <div className="summary-total">
-              <span>Total</span>
+              <span>{t('Total')}</span>
               <span>{formatPriceINR(calculateTotal())}</span>
             </div>
             <button className="checkout-btn">
-              Proceed to Checkout
+              {t('Proceed to Checkout')}
             </button>
             <Link to="/" className="continue-shopping">
-              Continue Shopping
+              {t('Continue Shopping')}
             </Link>
           </div>
         </div>

@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useCurrency } from './context/CurrencyContext';
+import { useCart } from './context/CartContext';
+import { useTranslation } from 'react-i18next';
 import LuxeLoader from './components/LuxeLoader';
 import './Landing.css';
 import './assets/Collection/CollectionGallery.css';
@@ -20,12 +22,13 @@ const INLINE_PLACEHOLDER =
 
 const MainComponent = () => {
   const [products, setProducts] = useState({});
-  const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantities, setQuantities] = useState({});
 
   const { formatPriceINR } = useCurrency();
+  const { addToCart } = useCart();
+  const { t } = useTranslation();
 
   // Define valid product categories
   const CATEGORIES = ['men', 'women', 'tshirts', 'trousers', 'shirts'];
@@ -37,73 +40,59 @@ const MainComponent = () => {
     trousers: '/trousers'
   };
 
-  const addToCart = async (productId, category, quantity) => {
+  const handleAddToCart = async (productId, category, quantity) => {
     try {
-      const response = await axios.post(`${API_URL}/cart`, {
-        productId,
-        category,
-        quantity,
-      });
-
-      if (response.data) {
-        const cartResponse = await axios.get(`${API_URL}/cart`);
-        setCart(cartResponse.data.items || []);
-        alert('Item added to cart successfully!');
-      }
+      await addToCart(productId, category, quantity);
+      alert(t('Item added to cart successfully!'));
     } catch (err) {
-      console.error('Error adding to cart:', err);
-      alert(err.response?.data?.error || 'Failed to add item to cart');
+      alert(t('Failed to add item to cart'));
     }
   };
 
   useEffect(() => {
-    const fetchData = async () => {
+    let isMounted = true;
+
+    const fetchCartAndRates = async () => {
       try {
         const conversionRatesPromise = ENABLE_CONVERSION_RATES
-          ? axios
-              .get(`${API_URL}/conversion-rates`)
-              .catch((conversionErr) => {
-                console.warn('Conversion rates unavailable:', conversionErr?.response?.status || conversionErr?.message);
-                return { data: null };
-              })
+          ? axios.get(`${API_URL}/conversion-rates`).catch(() => ({ data: null }))
           : Promise.resolve({ data: null });
 
-        const [productsResponses, cartResponse] = await Promise.all([
-          Promise.all(CATEGORIES.map(category => 
-            axios.get(`${API_URL}/${category}`)
-              .then(res => ({ category, data: res.data }))
-              .catch(error => {
-                console.error(`Error fetching ${category}:`, error);
-                return { category, data: [] };
-              })
-          )),
-          axios.get(`${API_URL}/cart`),
-        ]);
+        if (isMounted) {
+          setLoading(false); // Dismiss loader early
+        }
 
-        // Fire and forget conversion rates; failure is non-blocking
-        conversionRatesPromise.then(() => {}).catch(() => {});
-
-        // Transform products data
-        const productsData = productsResponses.reduce((acc, { category, data }) => {
-          acc[category] = data.map(item => ({
-            ...item,
-            categorySlug: category
-          }));
-          return acc;
-        }, {});
-
-        setProducts(productsData);
-        setCart(cartResponse.data.items || []);
-        setError(null);
+        conversionRatesPromise.catch(() => {});
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load products. Please try again later.');
-      } finally {
-        setLoading(false);
+        console.error('Error fetching initial data:', err);
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchData();
+    const fetchCategories = () => {
+      CATEGORIES.forEach(category => {
+        axios.get(`${API_URL}/${category}`)
+          .then(res => {
+            if (isMounted) {
+              setProducts(prev => ({
+                ...prev,
+                [category]: res.data.map(item => ({ ...item, categorySlug: category }))
+              }));
+            }
+          })
+          .catch(error => {
+            console.error(`Error fetching ${category}:`, error);
+          });
+      });
+    };
+
+    fetchCartAndRates().then(() => {
+      fetchCategories();
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // formatPriceINR is already imported from useCurrency
@@ -148,21 +137,21 @@ const MainComponent = () => {
           Your browser does not support the video tag.
         </video>
         <div className="hero-overlay">
-          <h2>Luxury Starts and Ends With Us</h2> 
+          <h2>{t('Luxury Starts and Ends With Us')}</h2> 
           <Link to="/exclusive" className="shop-btn">
-            Shop Exclusive Products
+            {t('Shop Exclusive Products')}
           </Link>
         </div>
       </section>
 
       {loading ? (
-        <LuxeLoader message="Curating the Luxe wardrobe..." />
+        <LuxeLoader message={t("Curating the Luxe wardrobe...")} />
       ) : (
         CATEGORIES.map(category => (
           products[category]?.length > 0 && (
             <section key={category} id={category} className="product-section">
               <h2 className="collection-title">
-                {getDisplayCategory(category)} Collection
+                {t(`${getDisplayCategory(category)} Collection`)}
               </h2>
 
               <div className="product-grid">
@@ -234,7 +223,7 @@ const MainComponent = () => {
               {SHOP_ALL_ROUTES[category] && (
                 <div className="section-actions">
                   <Link to={SHOP_ALL_ROUTES[category]} className="show-all-btn">
-                    Show All
+                    {t('Show All')}
                   </Link>
                 </div>
               )}

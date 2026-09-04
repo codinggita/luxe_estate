@@ -140,7 +140,14 @@
   display: flex;
   flex-direction: column;
   min-height: 310px;
+  text-decoration: none;
   transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.gallery-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
 }
 
 .gallery-card:hover {

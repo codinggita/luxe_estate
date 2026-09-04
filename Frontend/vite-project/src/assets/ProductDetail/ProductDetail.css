@@ -171,6 +171,12 @@
   border: 1px solid #e5e7eb;
 }
 
+.badge.in-stock {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
 /* Price Section */
 .price-section {
   display: flex;
@@ -304,7 +310,7 @@
 }
 
 /* Product Actions */
-.product-actions {
+.product-detail-actions {
   margin: 2rem 0;
   padding: 1.5rem 0;
   border-top: 1px solid #f0f0f0;
@@ -612,26 +618,103 @@
   border-color: #1a1a1a;
 }
 
-/* Description Section */
-.product-description-section {
-  margin-top: 4rem;
-  padding-top: 3rem;
-  border-top: 1px solid #f0f0f0;
+/* Premium Accordions */
+.premium-accordions {
+  margin-top: 3rem;
+  border-top: 1px solid #e5e7eb;
 }
 
-.product-description-section h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1a1a1a;
+.accordion-item {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.accordion-header {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 1.5rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
   font-family: 'Playfair Display', serif;
-  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  transition: all 0.3s ease;
 }
 
-.product-description-section p {
+.accordion-header:hover {
+  color: #4b5563;
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+  padding: 0;
+}
+
+.accordion-item.active .accordion-content {
+  max-height: 500px;
+  padding: 0 0 1.5rem 0;
+}
+
+.precise-description {
   color: #4b5563;
   line-height: 1.8;
-  margin-bottom: 1.5rem;
   font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Meta Grid within Accordion */
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.meta-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.meta-box .meta-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #9ca3af;
+  letter-spacing: 1px;
+  margin-bottom: 0.25rem;
+}
+
+.meta-box .meta-value {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Lists in Accordions */
+.materials-list, .shipping-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.materials-list li, .shipping-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #4b5563;
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+
+.check-icon, .shipping-icon {
+  color: #1a1a1a;
+  font-size: 1.2rem;
+  flex-shrink: 0;
 }
 
 /* Responsive */

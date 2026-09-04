@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { FiShoppingCart, FiHeart, FiShare2, FiPlus, FiMinus, FiEye } from 'react-icons/fi';
+import { FiShoppingCart, FiHeart, FiShare2, FiPlus, FiMinus, FiEye, FiChevronDown, FiChevronUp, FiCheckCircle, FiShield, FiTruck } from 'react-icons/fi';
 import { useCurrency } from '../../context/CurrencyContext.jsx';
+import { useCart } from '../../context/CartContext.jsx';
+import { useTranslation } from 'react-i18next';
 import './ProductDetail.css';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://luxe-estate-3.onrender.com/api';
+const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 const ProductDetail = () => {
   const { category, productId } = useParams();
@@ -17,7 +19,10 @@ const ProductDetail = () => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [activeAccordion, setActiveAccordion] = useState('details');
   const { formatPriceINR } = useCurrency();
+  const { addToCart } = useCart();
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchProduct();
@@ -40,10 +45,6 @@ const ProductDetail = () => {
   const handleImageChange = (index) => {
     setCurrentImageIndex(index);
     setIsAutoPlaying(false); // Stop auto-play when user manually changes image
-  };
-
-  const toggleAutoPlay = () => {
-    setIsAutoPlaying(!isAutoPlaying);
   };
 
   const fetchProduct = async () => {
@@ -69,17 +70,13 @@ const ProductDetail = () => {
     }
   };
 
-  const addToCart = async () => {
+  const handleAddToCartClick = async () => {
+    if (product.inStock === false) return;
     try {
-      await axios.post(`${API_URL}/cart`, {
-        productId,
-        category,
-        quantity
-      });
-      alert('Product added to cart successfully!');
+      await addToCart(productId, category, quantity);
+      alert(t('Product added to cart successfully!'));
     } catch (err) {
-      console.error('Error adding to cart:', err);
-      alert('Failed to add product to cart');
+      alert(t('Failed to add product to cart'));
     }
   };
 
@@ -90,8 +87,11 @@ const ProductDetail = () => {
     }
   };
 
+  const toggleAccordion = (section) => {
+    setActiveAccordion(activeAccordion === section ? null : section);
+  };
+
   if (loading) {
-    console.log('Loading state:', loading);
     return (
       <div className="product-detail-page">
         <div className="page-loader">
@@ -104,21 +104,18 @@ const ProductDetail = () => {
   }
 
   if (error || !product) {
-    console.log('Error state:', error, 'Product state:', product);
     return (
       <div className="product-detail-page">
         <div className="error-message">
-          <h2>Product not found</h2>
-          <p>The product you're looking for doesn't exist.</p>
+          <h2>{t('Product not found')}</h2>
+          <p>{t("The product you're looking for doesn't exist.")}</p>
           <button onClick={() => navigate('/')} className="btn-primary">
-            Go Back Home
+            {t('Go Back Home')}
           </button>
         </div>
       </div>
     );
   }
-
-  console.log('Rendering product:', product);
 
   return (
     <>
@@ -128,7 +125,7 @@ const ProductDetail = () => {
             <div className="product-image-section">
               <div className="main-image-container">
                 <img 
-                  src={(product.images && product.images[currentImageIndex]) || product.image || 'https://via.placeholder.com/400x500?text=Luxe+Product'} 
+                  src={(product.images && product.images[currentImageIndex]) || product.image || 'https://via.placeholder.com/600x800?text=Luxe+Product'} 
                   alt={product.name}
                   className="product-main-image"
                   loading="lazy"
@@ -159,7 +156,13 @@ const ProductDetail = () => {
                 <div className="product-badges">
                   {product.newArrival && <span className="badge new-arrival">NEW</span>}
                   {product.sale && <span className="badge sale-badge">SALE</span>}
-                  {!product.inStock && <span className="badge out-of-stock">OUT OF STOCK</span>}
+                  {product.inStock === false ? (
+                    <span className="badge out-of-stock">OUT OF STOCK</span>
+                  ) : (
+                    <span className="badge in-stock">
+                      <FiCheckCircle style={{ marginRight: '4px' }} /> IN STOCK
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -181,34 +184,17 @@ const ProductDetail = () => {
                 {Array.from({ length: 5 }, (_, i) => (
                   <span key={i} className={i < Math.floor(product.rating || 4.8) ? 'star-filled' : 'star-empty'}>★</span>
                 ))}
-                <span className="rating-text">1 Customer Review</span>
+                <span className="rating-text">{product.ratingCount || 1} {t('Customer Reviews')}</span>
               </div>
 
-              <p className="product-description">
-                {product.description || "Experience unparalleled luxury with our premium collection. Crafted with the finest materials and attention to detail, this piece embodies timeless elegance and sophistication."}
-              </p>
-
-              {product.features && (
-                <div className="product-features">
-                  <h4>Key Features:</h4>
-                  <div className="features-list">
-                    {product.features.map((feature, index) => (
-                      <div key={index} className="feature-tag">
-                        ✨ {feature}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="product-actions">
+              <div className="product-detail-actions">
                 <div className="quantity-selector">
-                  <label>Quantity</label>
+                  <label>{t('Quantity')}</label>
                   <div className="quantity-controls">
                     <button 
                       className="quantity-btn" 
                       onClick={() => handleQuantityChange(-1)}
-                      disabled={quantity <= 1}
+                      disabled={quantity <= 1 || product.inStock === false}
                     >
                       <FiMinus />
                     </button>
@@ -216,7 +202,7 @@ const ProductDetail = () => {
                     <button 
                       className="quantity-btn" 
                       onClick={() => handleQuantityChange(1)}
-                      disabled={quantity >= 10}
+                      disabled={quantity >= 10 || product.inStock === false}
                     >
                       <FiPlus />
                     </button>
@@ -224,36 +210,84 @@ const ProductDetail = () => {
                 </div>
 
                 <div className="action-buttons">
-                  <button className="add-to-cart-btn" onClick={addToCart}>
+                  <button 
+                    className="add-to-cart-btn" 
+                    onClick={handleAddToCartClick}
+                    disabled={product.inStock === false}
+                  >
                     <FiShoppingCart size={18} />
-                    Add to Cart
+                    {product.inStock === false ? t('Out of Stock') : t('Add to Cart')}
                   </button>
                   <button className="wishlist-btn">
                     <FiHeart size={18} />
                   </button>
-                  <button className="share-btn">
-                    <FiShare2 size={18} />
+                </div>
+              </div>
+
+              {/* Collapsible Accordions for Premium Details */}
+              <div className="premium-accordions">
+                <div className={`accordion-item ${activeAccordion === 'details' ? 'active' : ''}`}>
+                  <button className="accordion-header" onClick={() => toggleAccordion('details')}>
+                    <span>{t('The Details')}</span>
+                    {activeAccordion === 'details' ? <FiChevronUp /> : <FiChevronDown />}
                   </button>
+                  <div className="accordion-content">
+                    <p className="precise-description">
+                      {product.description || t("This exceptional piece represents the pinnacle of luxury fashion. Meticulously crafted with premium materials and traditional techniques, it offers unparalleled comfort and style. The attention to detail is evident in every stitch, making it a perfect addition to any sophisticated wardrobe.")}
+                    </p>
+                    <p className="precise-description">
+                      {t("Designed for the discerning individual who appreciates quality and elegance, this product combines timeless design with modern functionality. Whether for special occasions or everyday luxury, it delivers exceptional value and lasting satisfaction.")}
+                    </p>
+                    <div className="meta-grid">
+                      <div className="meta-box">
+                        <span className="meta-label">SKU</span>
+                        <span className="meta-value">{product._id.slice(-6).toUpperCase()}</span>
+                      </div>
+                      <div className="meta-box">
+                        <span className="meta-label">{t('Category')}</span>
+                        <span className="meta-value">{category}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`accordion-item ${activeAccordion === 'materials' ? 'active' : ''}`}>
+                  <button className="accordion-header" onClick={() => toggleAccordion('materials')}>
+                    <span>{t('Materials & Care')}</span>
+                    {activeAccordion === 'materials' ? <FiChevronUp /> : <FiChevronDown />}
+                  </button>
+                  <div className="accordion-content">
+                    {product.features && (
+                      <ul className="materials-list">
+                        {product.features.map((feature, index) => (
+                          <li key={index}><FiCheckCircle className="check-icon"/> {feature}</li>
+                        ))}
+                        {product.material && <li><FiCheckCircle className="check-icon"/> {t('Primary Material')}: {product.material}</li>}
+                      </ul>
+                    )}
+                    {!product.features && (
+                      <p className="precise-description">{t("Crafted with uncompromising attention to detail using only the finest sourced materials to ensure longevity and superior feel.")}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className={`accordion-item ${activeAccordion === 'shipping' ? 'active' : ''}`}>
+                  <button className="accordion-header" onClick={() => toggleAccordion('shipping')}>
+                    <span>{t('Shipping & Returns')}</span>
+                    {activeAccordion === 'shipping' ? <FiChevronUp /> : <FiChevronDown />}
+                  </button>
+                  <div className="accordion-content">
+                    <ul className="shipping-list">
+                      <li><FiTruck className="shipping-icon"/> <strong>{t('Complimentary Shipping')}</strong> {t('on all orders over $500.')}</li>
+                      <li><FiShield className="shipping-icon"/> <strong>{t('Free Returns')}</strong> {t('within 30 days of delivery.')}</li>
+                      <li><span className="shipping-icon">✈️</span> <strong>{t('Express Delivery')}</strong> {t('available globally.')}</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-
-              <div className="product-meta">
-                <div className="meta-item">
-                  <span className="meta-label">SKU:</span>
-                  <span className="meta-value">{product._id}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">Category:</span>
-                  <span className="meta-value">{category}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">Tags:</span>
-                  <span className="meta-value">Luxury, Premium, {category}</span>
-                </div>
-              </div>
-
+              
               <div className="share-section">
-                <label>Share</label>
+                <label>{t('Share This Piece')}</label>
                 <div className="share-buttons">
                   <button className="share-btn">📘</button>
                   <button className="share-btn">📷</button>
@@ -263,19 +297,9 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          <div className="product-description-section">
-            <h2>Description</h2>
-            <p>
-              {product.description || "This exceptional piece represents the pinnacle of luxury fashion. Meticulously crafted with premium materials and traditional techniques, it offers unparalleled comfort and style. The attention to detail is evident in every stitch, making it a perfect addition to any sophisticated wardrobe."}
-            </p>
-            <p>
-              Designed for the discerning individual who appreciates quality and elegance, this product combines timeless design with modern functionality. Whether for special occasions or everyday luxury, it delivers exceptional value and lasting satisfaction.
-            </p>
-          </div>
-
           <div className="related-products-section">
             <div className="section-header">
-              <h2>You May Also Like</h2>
+              <h2>{t('You May Also Like')}</h2>
               <div className="section-divider"></div>
             </div>
             <div className="related-products-grid">
@@ -306,7 +330,7 @@ const ProductDetail = () => {
             </div>
             <div className="view-all-container">
               <Link to={`/category/${category}`} className="view-all-btn">
-                View All {category} Products →
+                {t('View All')} {t(category)} {t('Products')} →
               </Link>
             </div>
           </div>

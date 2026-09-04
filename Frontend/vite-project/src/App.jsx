@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState } from 'react';
+import ScrollToTop from "./components/ScrollToTop";
 import MainComponent from "./MainComponent";
 import Cart from "./assets/Cart/Cart";
 import ContactPage from "./assets/Contactus/ContactUs";
@@ -13,27 +14,24 @@ import Womens from "./assets/Womens/Womens";
 import ProductDetail from "./assets/ProductDetail/ProductDetail";
 import HeaderNavbar from "./HeaderNavbar";
 import Footer from "./Footer";
+import AdminLogin from "./Admin/AdminLogin";
+import AdminDashboard from "./Admin/AdminDashboard";
+import ProductManagement from "./Admin/ProductManagement";
+import AdminAnalytics from "./Admin/AdminAnalytics";
+import SubscriberManagement from "./Admin/SubscriberManagement";
+import OrderManagement from "./Admin/OrderManagement";
+import CategoryManagement from "./Admin/CategoryManagement";
+import CouponManagement from "./Admin/CouponManagement";
+import ReturnManagement from "./Admin/ReturnManagement";
+import RevenueAnalytics from "./Admin/RevenueAnalytics";
 import './assets/GenderCollection/GenderCollection.css';
 
 const App = () => {
-  const [cart, setCart] = useState([]);
-
-  // You might want to fetch the cart from your API here
-  // useEffect(() => {
-  //   const fetchCart = async () => {
-  //     try {
-  //       const response = await axios.get("http://localhost:3000/api/cart");
-  //       setCart(response.data.items || []);
-  //     } catch (error) {
-  //       console.error("Error fetching cart:", error);
-  //     }
-  //   };
-  //   fetchCart();
-  // }, []);
 
   return (
     <Router>
-      <HeaderNavbar cart={cart} />
+      <ScrollToTop />
+      <HeaderNavbar />
       <main>
         <Routes>
           <Route path="/" element={<MainComponent />} />
@@ -47,6 +45,18 @@ const App = () => {
           <Route path="/men" element={<Mens />} />
           <Route path="/women" element={<Womens />} />
           <Route path="/product/:category/:productId" element={<ProductDetail />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/products" element={<ProductManagement />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
+          <Route path="/admin/subscribers" element={<SubscriberManagement />} />
+          <Route path="/admin/orders" element={<OrderManagement />} />
+          <Route path="/admin/categories" element={<CategoryManagement />} />
+          <Route path="/admin/coupons" element={<CouponManagement />} />
+          <Route path="/admin/returns" element={<ReturnManagement />} />
+          <Route path="/admin/revenue" element={<RevenueAnalytics />} />
         </Routes>
       </main>
       <Footer />

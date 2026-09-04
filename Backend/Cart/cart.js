@@ -35,7 +35,7 @@ const initializeCartRoutes = (db) => {
           category, // Save category in cart
           quantity,
           name: product.name,
-          image: product.image,
+          image: product.images && product.images.length > 0 ? product.images[0] : product.image,
           price: product.price,
           rating: product.rating
         });

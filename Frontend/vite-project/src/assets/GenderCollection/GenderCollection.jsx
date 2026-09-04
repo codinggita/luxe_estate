@@ -4,10 +4,12 @@ import axios from 'axios';
 import LuxeLoader from '../../components/LuxeLoader';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { useCurrency } from '../../context/CurrencyContext';
+import { useCart } from '../../context/CartContext';
+import { useTranslation } from 'react-i18next';
 import '../Collection/CollectionGallery.css';
 import './GenderCollection.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://luxe-estate-3.onrender.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 const INLINE_PLACEHOLDER =
   'data:image/svg+xml;utf8,' +
   encodeURIComponent(
@@ -85,27 +87,18 @@ const GenderCollection = ({
   const [priceBounds, setPriceBounds] = useState([0, 0]);
   const [priceLimit, setPriceLimit] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [cartItems, setCartItems] = useState([]);
   const { formatPriceINR } = useCurrency();
+  const { addToCart } = useCart();
+  const { t } = useTranslation();
 
-  const handleAddToCart = (productId, quantity = 1) => {
+  const handleAddToCart = async (productId, quantity = 1) => {
     const product = products.find(p => p._id === productId);
-    if (product) {
-      setCartItems(prev => {
-        const existingItem = prev.find(item => item.productId === productId);
-        if (existingItem) {
-          return prev.map(item => 
-            item.productId === productId 
-              ? { ...item, quantity: item.quantity + quantity }
-              : item
-          );
-        } else {
-          return [...prev, { productId, quantity, product }];
-        }
-      });
-      
-      // Show success feedback
-      console.log(`Added ${quantity} ${product.name} to cart`);
+    
+    try {
+      await addToCart(product._id, product.category, quantity);
+      alert(t('Item added to cart successfully!'));
+    } catch (err) {
+      alert(t('Failed to add item to cart'));
     }
   };
 
@@ -245,11 +238,11 @@ const GenderCollection = ({
   };
 
   if (loading) {
-    return <LuxeLoader message={`Curating the ${title || 'collection'}...`} />;
+    return <LuxeLoader message={t(`Curating the ${title || 'collection'}...`)} />;
   }
 
   if (error) {
-    return <div className="gender-empty-state">{error}</div>;
+    return <div className="gender-empty-state">{t(error)}</div>;
   }
 
   return (
@@ -261,9 +254,9 @@ const GenderCollection = ({
         }}
       >
         <div className="gender-hero-content">
-          <p className="gender-eyebrow">{eyebrow || (gender === 'men' ? 'The Gentleman Atelier' : 'The Salon Collection')}</p>
-          <h1>{title}</h1>
-          <p>{subtitle}</p>
+          <p className="gender-eyebrow">{t(eyebrow || (gender === 'men' ? 'The Gentleman Atelier' : 'The Salon Collection'))}</p>
+          <h1>{t(title)}</h1>
+          <p>{t(subtitle)}</p>
         </div>
       </section>
 
@@ -280,11 +273,11 @@ const GenderCollection = ({
         <div className={`gender-filter-panel ${filtersOpen ? 'open' : 'collapsed'}`}>
           <div className="gender-panel-header">
             <div>
-              <p className="panel-label">Filters</p>
-              <h3>{filteredProducts.length} styles curated</h3>
+              <p className="panel-label">{t('Filters')}</p>
+              <h3>{filteredProducts.length} {t('styles curated')}</h3>
             </div>
             <button type="button" className="ghost-btn" onClick={clearFilters}>
-              Reset
+              {t('Reset')}
             </button>
           </div>
 
@@ -306,12 +299,12 @@ const GenderCollection = ({
 
           <div className="filter-grid">
             <label className="filter-control">
-              <span>Material</span>
+              <span>{t('Material')}</span>
               <select
                 value={filters.material}
                 onChange={(e) => handleFilterChange('material', e.target.value)}
               >
-                <option value="all">All materials</option>
+                <option value="all">{t('All materials')}</option>
                 {materialOptions.map((material) => (
                   <option key={material} value={material}>
                     {material.replace(/\b\w/g, (char) => char.toUpperCase())}
@@ -321,12 +314,12 @@ const GenderCollection = ({
             </label>
 
             <label className="filter-control">
-              <span>Color</span>
+              <span>{t('Color')}</span>
               <select
                 value={filters.color}
                 onChange={(e) => handleFilterChange('color', e.target.value)}
               >
-                <option value="all">All palettes</option>
+                <option value="all">{t('All palettes')}</option>
                 {colorOptions.map((color) => (
                   <option key={color} value={color}>
                     {color.replace(/\b\w/g, (char) => char.toUpperCase())}
@@ -336,12 +329,12 @@ const GenderCollection = ({
             </label>
 
             <label className="filter-control">
-              <span>Size</span>
+              <span>{t('Size')}</span>
               <select
                 value={filters.size}
                 onChange={(e) => handleFilterChange('size', e.target.value)}
               >
-                <option value="all">All sizes</option>
+                <option value="all">{t('All sizes')}</option>
                 {sizeOptions.map((size) => (
                   <option key={size} value={size}>
                     {size.toUpperCase()}
@@ -351,7 +344,7 @@ const GenderCollection = ({
             </label>
 
             <label className="filter-control">
-              <span>Sort by</span>
+              <span>{t('Sort by')}</span>
               <select
                 value={filters.sort}
                 onChange={(e) => handleFilterChange('sort', e.target.value)}
@@ -368,9 +361,9 @@ const GenderCollection = ({
           {priceBounds[0] !== priceBounds[1] && (
             <div className="price-filter">
               <div className="price-label">
-                <span>Up to {formatPriceINR(priceLimit)}</span>
+                <span>{t('Up to')} {formatPriceINR(priceLimit)}</span>
                 <small>
-                  Range {formatPriceINR(priceBounds[0])} – {formatPriceINR(priceBounds[1])}
+                  {t('Range')} {formatPriceINR(priceBounds[0])} – {formatPriceINR(priceBounds[1])}
                 </small>
               </div>
               <input
@@ -449,7 +442,7 @@ const GenderCollection = ({
                           handleAddToCart(product._id);
                         }}
                       >
-                        Add to Cart
+                        {t('Add to Cart')}
                       </button>
                     </div>
                   </article>
@@ -459,7 +452,7 @@ const GenderCollection = ({
           </div>
         ) : (
           <div className="gender-empty-state">
-            No looks matched those filters. Try adjusting the palette, size, or price.
+            {t('No looks matched those filters. Try adjusting the palette, size, or price.')}
           </div>
         )}
       </section>

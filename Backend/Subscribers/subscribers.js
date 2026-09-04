@@ -12,7 +12,7 @@ const initializeSubscriberRoutes = (db) => {
   };
 
   // Route for newsletter subscription
-  router.post('/subscribers', async (req, res) => {
+  router.post('/', async (req, res) => {
     const { email } = req.body;
   
     // Frontend validates too, but double-check here
@@ -48,7 +48,7 @@ const initializeSubscriberRoutes = (db) => {
   });
 
   // Route to get all subscribers (admin only - you might want to add authentication)
-  router.get('/api/subscribers', async (req, res) => {
+  router.get('/', async (req, res) => {
     try {
       const subscribers = await db.collection("subscribers").find().toArray();
       res.json({ subscribers });
@@ -58,7 +58,7 @@ const initializeSubscriberRoutes = (db) => {
   });
 
   // Route to unsubscribe
-  router.delete('/api/subscribers/:email', async (req, res) => {
+  router.delete('/:email', async (req, res) => {
     const { email } = req.params;
     
     try {
